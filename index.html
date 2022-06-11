@@ -1,0 +1,90 @@
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>audio delay test</title>
+		<style>
+			canvas {
+				border: 1px solid black;
+			}
+		</style>
+	</head>
+	<body oncontextmenu="return false;">
+		<canvas width="1000" height="600"></canvas>
+	</body>
+	<script>
+		const accentAudio = new Audio("hit.mp3"), tickAudio = new Audio("tick.mp3");
+		let started = 0;
+		const C = document.getElementsByTagName("canvas")[0], c = C.getContext("2d");
+		let tap = 0;
+		let now = Date.now();
+		document.onkeydown = e => { if(!event.repeat) tap = Date.now(); };
+		let press = 0, mouseX = 0, mouseY = 0;
+		document.onmousedown = e => {
+			if(!started) started = 1;
+			else if(e.button === 0) press = 1;
+		};
+		document.onmouseup = e => { if(e.button === 0) press = 0; };
+		C.onmousemove = e => { mouseX = e.offsetX; mouseY = e.offsetY };
+		let offset = 0;
+		const accent = 1000;
+		const mod = m => ((m + accent / 2) % accent) - accent / 2;
+		const msToPx = ms => mod(ms) / accent * 1000 + 1000 / 2;
+		const pxToMs = px => (px - 1000 / 2) / 1000 * accent;
+		let time = 0;
+		function draw() {
+			now = Date.now();
+			window.requestAnimationFrame(draw);
+			c.fillStyle = "rgb(93, 0, 81)";
+			c.fillRect(0, 0, 1000, 600);
+			c.fillStyle = "rgb(171, 130, 170)";
+			c.font = "30px impact";
+			c.textBaseline = "middle";
+			c.textAlign = "center";
+			if(started) {
+				c.fillStyle = "rgb(171, 130, 170)";
+				c.font = "30px impact";
+				c.textBaseline = "middle";
+				c.textAlign = "center";
+				c.fillText("Press any key when the accented note plays", 1000 / 2, 150 / 2);
+				c.fillText("Click to align the bar", 1000 / 2, 150 + 200 + 150 / 2);
+				c.fillText("Note: keyboard input and video display delays may add to delay", 1000 / 2, 550);
+				c.fillStyle = "rgb(254, 194, 2)";
+				c.fillText(offset + " millisecond" + (offset !== 1 && offset !== -1 ? "s" : ""), 1000 / 2, 500);
+				c.fillStyle = "rgb(255, 25, 129)";
+				c.fillRect(0, 150, 1000, 200);
+				c.fillStyle = "rgb(93, 0, 81)";
+				const a = msToPx(offset);
+				c.beginPath();
+				c.moveTo(a, 150 + 10);
+				c.lineTo(a + 10, 150);
+				c.lineTo(a - 10, 150);
+				c.closePath();
+				c.fill();
+				c.beginPath();
+				c.moveTo(a, 150 + 200 - 10);
+				c.lineTo(a + 10, 150+ 200 );
+				c.lineTo(a - 10, 150+ 200 );
+				c.closePath();
+				c.fill();
+				c.fillStyle = "rgb(252, 141, 192)";
+				c.fillRect(a - 1, 150 + 9, 2, 200 - 18);
+				c.fillStyle = "rgb(218, 255, 1)";
+				c.fillRect(msToPx(tap) - 3, 150 + 20, 6, 200 - 40);
+				c.fillRect(msToPx(now) - 3, 150 + 20, 6, 200 - 40);
+				const n = now % accent;
+				if(n < accent / 3 && time === 0) {
+					accentAudio.play();
+					time = 1;
+				}
+				else if(n > accent / 3 * time && time > 0) {
+					tickAudio.play();
+					time += 1;
+					if(time === 3) { time = 0; }
+				}
+				if(press && mouseY > 150 && mouseY < 150 + 200) offset = Math.round(pxToMs(mouseX));
+			}
+			else c.fillText("Click to start", 1000 / 2, 600 / 2);
+		}
+		window.requestAnimationFrame(draw);
+	</script>
+</html>
